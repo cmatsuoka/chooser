@@ -33,27 +33,31 @@ func (c *Chooser) Deinit() {
 	nc.End()
 }
 
+type Handler func(*Chooser) error
+
 type MenuOption struct {
 	Text    string
-	Handler func(*Chooser) error
+	Handler Handler
 }
 
 type Menu struct {
 	mptmenu.MptMenu
-	options []MenuOption
-	c       *Chooser
+	handlers []Handler
+	c        *Chooser
 }
 
 func NewMenu(c *Chooser, title, desc, prompt string, options []MenuOption, topOption bool) *Menu {
 	items := make([]string, len(options))
+	handlers := make([]Handler, len(options))
 	for i, option := range options {
 		items[i] = option.Text
+		handlers[i] = option.Handler
 	}
 
 	return &Menu{
-		MptMenu: mptmenu.New(title, desc, prompt, items, topOption),
-		options: options,
-		c:       c,
+		MptMenu:  mptmenu.New(title, desc, prompt, items, topOption),
+		handlers: handlers,
+		c:        c,
 	}
 }
 
@@ -74,7 +78,7 @@ func (m *Menu) Choose() {
 			}
 		}
 
-		handler := m.options[num].Handler
+		handler := m.handlers[num]
 		if handler == nil {
 			// return to previous menu
 			break
