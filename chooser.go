@@ -33,6 +33,15 @@ func (c *Chooser) Deinit() {
 	nc.End()
 }
 
+func (c *Chooser) Clear() {
+	c.scr.Clear()
+}
+
+func (c *Chooser) GetKey() string {
+	ch := c.scr.GetChar()
+	return nc.KeyString(ch)
+}
+
 type Handler func(*Chooser) error
 
 type MenuOption struct {
@@ -63,17 +72,12 @@ func NewMenu(c *Chooser, title, desc, prompt string, options []MenuOption, topOp
 
 func (m *Menu) Choose() {
 	for {
-		m.c.scr.Clear()
+		m.c.Clear()
 		num := 0
 		for {
 			m.Show(m.c.scr, 0, 0)
-
-			ch := m.c.scr.GetChar()
-			key := nc.KeyString(ch)
-
-			var ok bool
-			num, ok = m.CheckKey(key)
-			if ok {
+			key := m.c.GetKey()
+			if num = m.CheckKey(key); num >= 0 {
 				break
 			}
 		}
