@@ -1,45 +1,53 @@
 package chooser
 
 import (
+	"fmt"
 	"log"
 
-	nc "github.com/rthornton128/goncurses"
+	"github.com/nsf/termbox-go"
 
 	"github.com/cmatsuoka/chooser/mptmenu"
 )
 
 type Chooser struct {
-	scr *nc.Window
 }
 
 func (c *Chooser) Init() error {
-	var err error
-	c.scr, err = nc.Init()
-	if err != nil {
+	if err := termbox.Init(); err != nil {
 		return err
 	}
-
-	nc.Raw(true)
-	nc.Echo(false)
-	nc.Cursor(0)
-	c.scr.Timeout(0)
-	c.scr.Clear()
-	c.scr.Keypad(true)
-
+	termbox.SetOutputMode(termbox.OutputNormal)
 	return nil
 }
 
 func (c *Chooser) Deinit() {
-	nc.End()
+	termbox.Close()
 }
 
 func (c *Chooser) Clear() {
-	c.scr.Clear()
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 }
 
 func (c *Chooser) GetKey() string {
-	ch := c.scr.GetChar()
-	return nc.KeyString(ch)
+	for {
+		ev := termbox.PollEvent()
+		if ev.Type == termbox.EventKey {
+			switch ev.Key {
+			case termbox.KeyEsc:
+				return "esc"
+			case termbox.KeyArrowUp:
+				return "up"
+			case termbox.KeyArrowDown:
+				return "down"
+			case termbox.KeyEnter:
+				return "enter"
+			default:
+				if ev.Key > '0' && ev.Key < 'z' {
+					return fmt.Sprintf("%c", ev.Key)
+				}
+			}
+		}
+	}
 }
 
 type Handler func(*Chooser) error
@@ -72,10 +80,10 @@ func NewMenu(c *Chooser, title, desc, prompt string, options []MenuOption, topOp
 
 func (m *Menu) Choose() {
 	for {
-		m.c.Clear()
 		num := 0
 		for {
-			m.Show(m.c.scr, 0, 0)
+			m.c.Clear()
+			m.Show()
 			key := m.c.GetKey()
 			if num = m.CheckKey(key); num >= 0 {
 				break
