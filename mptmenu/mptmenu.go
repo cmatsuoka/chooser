@@ -133,22 +133,22 @@ func (m *MptMenu) Next() bool {
 	}
 }
 
-func (m *MptMenu) CheckKey(key string) int {
+func (m *MptMenu) CheckKey(key int) int {
 	for i, opt := range m.options {
-		if string([]byte{opt.key}) == key {
+		if int(opt.key) == key {
 			m.current = i
 			return i
 		}
 	}
 
-	switch key {
-	case "enter":
+	switch termbox.Key(key) {
+	case termbox.KeyEnter:
 		return m.current
-	case "down":
+	case termbox.KeyArrowDown:
 		m.Next()
-	case "up":
+	case termbox.KeyArrowUp:
 		m.Prev()
-	case "esc":
+	case termbox.KeyEsc:
 		return 0
 	}
 

@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/cmatsuoka/chooser"
 )
@@ -11,24 +13,24 @@ const (
 	goBackOption = "Go Back"
 )
 
-func previousHandler(c *chooser.Chooser) error {
+func previousHandler() error {
 	options := []chooser.MenuOption{
 		{goBackOption, nil},
 		{"some version", nil},
 	}
 
-	menu := chooser.NewMenu(c, "", "", "Start into a previous version:", options, true)
+	menu := chooser.NewMenu("", "", "Start into a previous version:", options, true)
 	menu.Choose()
 
 	return nil
 }
 
-func recoverHandler(c *chooser.Chooser) error {
+func recoverHandler() error {
 	// set system to boot in recover mode
 	return nil
 }
 
-func reinstallHandler(c *chooser.Chooser) error {
+func reinstallHandler() error {
 	// reinstall system
 	return nil
 }
@@ -38,9 +40,11 @@ func main() {
 	//seed := flag.String("seed", "/run/ubuntu-seed", "Ubuntu-seed location")
 	flag.Parse()
 
-	c := &chooser.Chooser{}
-	c.Init()
-	defer c.Deinit()
+	if err := chooser.Init(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+		os.Exit(1)
+	}
+	defer chooser.Deinit()
 
 	options := []chooser.MenuOption{
 		{"Start normally", nil},
@@ -49,6 +53,6 @@ func main() {
 		{"Reinstall                      >", reinstallHandler},
 	}
 
-	menu := chooser.NewMenu(c, title, "", "Use arrow/number keys then Enter:", options, false)
+	menu := chooser.NewMenu(title, "", "Use arrow/number keys then Enter:", options, false)
 	menu.Choose()
 }

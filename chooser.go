@@ -9,48 +9,36 @@ import (
 	"github.com/cmatsuoka/chooser/mptmenu"
 )
 
-type Chooser struct {
-}
-
-func (c *Chooser) Init() error {
+func Init() error {
 	if err := termbox.Init(); err != nil {
-		return err
+		return fmt.Errorf("cannot initialize the terminal: %v", err)
 	}
 	termbox.SetOutputMode(termbox.OutputNormal)
 	return nil
 }
 
-func (c *Chooser) Deinit() {
+func Deinit() {
 	termbox.Close()
 }
 
-func (c *Chooser) Clear() {
+func clear() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 }
 
-func (c *Chooser) GetKey() string {
+func getKey() int {
 	for {
 		ev := termbox.PollEvent()
 		if ev.Type == termbox.EventKey {
-			switch ev.Key {
-			case termbox.KeyEsc:
-				return "esc"
-			case termbox.KeyArrowUp:
-				return "up"
-			case termbox.KeyArrowDown:
-				return "down"
-			case termbox.KeyEnter:
-				return "enter"
-			default:
-				if ev.Key > '0' && ev.Key < 'z' {
-					return fmt.Sprintf("%c", ev.Key)
-				}
+			if ev.Key == 0 {
+				return int(ev.Ch)
+			} else {
+				return int(ev.Key)
 			}
 		}
 	}
 }
 
-type Handler func(*Chooser) error
+type Handler func() error
 
 type MenuOption struct {
 	Text    string
@@ -60,10 +48,9 @@ type MenuOption struct {
 type Menu struct {
 	mptmenu.MptMenu
 	handlers []Handler
-	c        *Chooser
 }
 
-func NewMenu(c *Chooser, title, desc, prompt string, options []MenuOption, topOption bool) *Menu {
+func NewMenu(title, desc, prompt string, options []MenuOption, topOption bool) *Menu {
 	items := make([]string, len(options))
 	handlers := make([]Handler, len(options))
 	for i, option := range options {
@@ -74,7 +61,6 @@ func NewMenu(c *Chooser, title, desc, prompt string, options []MenuOption, topOp
 	return &Menu{
 		MptMenu:  mptmenu.New(title, desc, prompt, items, topOption),
 		handlers: handlers,
-		c:        c,
 	}
 }
 
@@ -82,9 +68,9 @@ func (m *Menu) Choose() {
 	for {
 		num := 0
 		for {
-			m.c.Clear()
+			clear()
 			m.Show()
-			key := m.c.GetKey()
+			key := getKey()
 			if num = m.CheckKey(key); num >= 0 {
 				break
 			}
@@ -97,8 +83,8 @@ func (m *Menu) Choose() {
 		}
 
 		// handle this option
-		if err := handler(m.c); err != nil {
-			m.c.Deinit()
+		if err := handler(); err != nil {
+			termbox.Close()
 			log.Fatalf("internal error: %v", err)
 		}
 	}
